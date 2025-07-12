@@ -18,7 +18,7 @@ from services.order_data_service import order_data_service
 # Create FastAPI app
 app = FastAPI(
     title="Smart Warehouse Optimizer",
-    description="AI-Powered Warehouse Management System - Hackathon Winner",
+    description="AI-Powered Warehouse Management System ",
     version="1.0.0"
 )
 
