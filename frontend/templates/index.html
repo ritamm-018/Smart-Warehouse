@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Warehouse Simulator - AI-Powered Management System</title>
+    
+    <!-- CSS Libraries -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/boxicons@2.0.7/css/boxicons.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link href="/static/css/style.css" rel="stylesheet">
+    
+
+    
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Socket.IO for real-time updates -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2>Smart Warehouse Simulator</h2>
+            <p>Initializing AI-Powered Management System...</p>
+            <div class="loading-progress">
+                <div class="progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="app" class="app-container" style="display: none;">
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <i class="fas fa-warehouse me-2"></i>
+                    Smart Warehouse Simulator
+                </a>
+                
+                <div class="navbar-nav ms-auto">
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-cog me-1"></i>Settings
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="toggleTheme()">
+                                <i class="fas fa-moon me-2"></i>Toggle Theme
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="exportData()">
+                                <i class="fas fa-download me-2"></i>Export Data
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showHelp()">
+                                <i class="fas fa-question-circle me-2"></i>Help
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Navigation Dropdown -->
+            <div class="navigation-dropdown">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="navigationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-bars me-2"></i>Navigation Menu
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="navigationDropdown">
+                    <li><h6 class="dropdown-header"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h6></li>
+                    <li><a class="dropdown-item" href="#overview" onclick="showSection('overview')">
+                        <i class="fas fa-chart-line me-2"></i>Overview
+                    </a></li>
+                    <li><a class="dropdown-item" href="#warehouse-2d" onclick="showSection('warehouse-2d')">
+                        <i class="fas fa-th me-2"></i>Warehouse 2D
+                    </a></li>
+
+                    <li><a class="dropdown-item active" href="#layout-editor" onclick="showSection('layout-editor')">
+                        <i class="fas fa-edit me-2"></i>Layout Editor
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header"><i class="fas fa-cogs me-2"></i>Management</h6></li>
+                    <li><a class="dropdown-item" href="#inventory" onclick="showSection('inventory')">
+                        <i class="fas fa-boxes me-2"></i>Inventory
+                    </a></li>
+                    <li><a class="dropdown-item" href="#orders" onclick="showSection('orders')">
+                        <i class="fas fa-shopping-cart me-2"></i>Orders
+                    </a></li>
+                    <li><a class="dropdown-item" href="#robots" onclick="showSection('robots')">
+                        <i class="fas fa-robot me-2"></i>Robots
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header"><i class="fas fa-chart-bar me-2"></i>Analytics</h6></li>
+                    <li><a class="dropdown-item" href="#analytics" onclick="showSection('analytics')">
+                        <i class="fas fa-chart-bar me-2"></i>Analytics
+                    </a></li>
+                    <li><a class="dropdown-item" href="#ai" onclick="showSection('ai')">
+                        <i class="fas fa-brain me-2"></i>AI Insights
+                    </a></li>
+                    <li><a class="dropdown-item" href="#optimization" onclick="showSection('optimization')">
+                        <i class="fas fa-magic me-2"></i>Optimization
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header"><i class="fas fa-play me-2"></i>Simulation</h6></li>
+                    <li><a class="dropdown-item" href="#simulation" onclick="showSection('simulation')">
+                        <i class="fas fa-play me-2"></i>Simulation
+                    </a></li>
+                    <li><a class="dropdown-item" href="#readings" onclick="showSection('readings')">
+                        <i class="fas fa-chart-line me-2"></i>Readings
+                    </a></li>
+                </ul>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Overview Section -->
+                <div id="overview" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-chart-line me-2"></i>Warehouse Overview</h2>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" onclick="startSimulation()">
+                                <i class="fas fa-play me-1"></i>Start Simulation
+                            </button>
+                            <button class="btn btn-success" onclick="optimizeWarehouse()">
+                                <i class="fas fa-magic me-1"></i>Optimize
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- KPI Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="kpi-card">
+                                <div class="kpi-icon">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </div>
+                                <div class="kpi-content">
+                                    <h3 id="total-orders">0</h3>
+                                    <p>Total Orders</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="kpi-card">
+                                <div class="kpi-icon">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div class="kpi-content">
+                                    <h3 id="active-robots">0</h3>
+                                    <p>Active Robots</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="kpi-card">
+                                <div class="kpi-icon">
+                                    <i class="fas fa-percentage"></i>
+                                </div>
+                                <div class="kpi-content">
+                                    <h3 id="completion-rate">0%</h3>
+                                    <p>Completion Rate</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="kpi-card">
+                                <div class="kpi-icon">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </div>
+                                <div class="kpi-content">
+                                    <h3 id="total-value">$0</h3>
+                                    <p>Total Value</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Real-time Charts -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="chart-card">
+                                <h5>Order Processing Timeline</h5>
+                                <canvas id="orderChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-card">
+                                <h5>Robot Utilization</h5>
+                                <canvas id="robotChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Activity Feed -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="activity-card">
+                                <h5><i class="fas fa-stream me-2"></i>Live Activity Feed</h5>
+                                <div id="activity-feed" class="activity-feed">
+                                    <!-- Activity items will be added here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Warehouse 2D Section -->
+                <div id="warehouse-2d" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-th me-2"></i>2D Warehouse Layout</h2>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" onclick="refresh2DView()">
+                                <i class="fas fa-sync me-1"></i>Refresh View
+                            </button>
+                            <button class="btn btn-info" onclick="export2DImage()">
+                                <i class="fas fa-download me-1"></i>Export Image
+                            </button>
+                            <button class="btn btn-success" onclick="toggle2DAnimation()">
+                                <i class="fas fa-play me-1"></i>Toggle Animation
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="warehouse-2d-container">
+                        <div class="warehouse-2d-controls">
+                            <div class="control-panel">
+                                <h5><i class="fas fa-cog me-2"></i>2D View Controls</h5>
+                                <div class="control-group">
+                                    <label for="2d-zoom">Zoom Level:</label>
+                                    <input type="range" id="2d-zoom" min="0.5" max="3" step="0.1" value="1" onchange="update2DZoom()">
+                                    <span id="zoom-value">100%</span>
+                                </div>
+                                <div class="control-group">
+                                    <label>
+                                        <input type="checkbox" id="show-robots-2d" checked onchange="toggle2DRobots()"> Show Robots
+                                    </label>
+                                </div>
+                                <div class="control-group">
+                                    <label>
+                                        <input type="checkbox" id="show-paths-2d" checked onchange="toggle2DPaths()"> Show Paths
+                                    </label>
+                                </div>
+                                <div class="control-group">
+                                    <label>
+                                        <input type="checkbox" id="show-labels-2d" checked onchange="toggle2DLabels()"> Show Labels
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="legend-panel">
+                                <h5><i class="fas fa-info-circle me-2"></i>Legend</h5>
+                                <div class="legend-items">
+                                    <div class="legend-item">
+                                        <div class="legend-color shelf"></div>
+                                        <span>Shelves</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <div class="legend-color packing"></div>
+                                        <span>Packing Stations</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <div class="legend-color entry"></div>
+                                        <span>Entry Points</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <div class="legend-color exit"></div>
+                                        <span>Exit Points</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <div class="legend-color charging"></div>
+                                        <span>Charging Stations</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <div class="legend-color robot"></div>
+                                        <span>Robots</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <div class="legend-color path"></div>
+                                        <span>Robot Paths</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="warehouse-2d-viewport">
+                            <div class="viewport-header">
+                                <h5><i class="fas fa-eye me-2"></i>2D Warehouse View</h5>
+                                <div class="viewport-info">
+                                    <span id="2d-grid-size">30x30 Grid</span>
+                                    <span id="2d-element-count">0 Elements</span>
+                                </div>
+                            </div>
+                            <div class="warehouse-2d-grid-container" id="2d-grid-container">
+                                <canvas id="warehouse-2d-canvas" width="900" height="900"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <!-- Layout Editor Section -->
+                <div id="layout-editor" class="content-section active">
+                    <div class="section-header">
+                        <h2><i class="fas fa-edit me-2"></i>Custom Warehouse Layout Editor</h2>
+                        <div class="header-actions">
+                            <button class="btn btn-success" onclick="saveLayout()">
+                                <i class="fas fa-save me-1"></i>Save Layout
+                            </button>
+                            <button class="btn btn-warning" onclick="loadLayout()">
+                                <i class="fas fa-folder-open me-1"></i>Load Layout
+                            </button>
+                            <button class="btn btn-danger" onclick="clearLayout()">
+                                <i class="fas fa-trash me-1"></i>Clear All
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="layout-editor-container">
+                        <div class="layout-tools">
+                            <div class="tool-section">
+                                <h5><i class="fas fa-palette me-2"></i>Layout Tools</h5>
+                                <div class="tool-buttons">
+                                    <button class="tool-btn active" data-tool="shelf" onclick="selectTool('shelf')">
+                                        <i class="fas fa-boxes"></i>
+                                        <span>Shelf</span>
+                                    </button>
+                                    <button class="tool-btn" data-tool="packing" onclick="selectTool('packing')">
+                                        <i class="fas fa-box-open"></i>
+                                        <span>Packing Station</span>
+                                    </button>
+                                    <button class="tool-btn" data-tool="entry" onclick="selectTool('entry')">
+                                        <i class="fas fa-sign-in-alt"></i>
+                                        <span>Entry Point</span>
+                                    </button>
+                                    <button class="tool-btn" data-tool="exit" onclick="selectTool('exit')">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                        <span>Exit Point</span>
+                                    </button>
+                                    <button class="tool-btn" data-tool="charging" onclick="selectTool('charging')">
+                                        <i class="fas fa-charging-station"></i>
+                                        <span>Charging Station</span>
+                                    </button>
+                                    <button class="tool-btn" data-tool="eraser" onclick="selectTool('eraser')">
+                                        <i class="fas fa-eraser"></i>
+                                        <span>Eraser</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="tool-section">
+                                <h5><i class="fas fa-tags me-2"></i>Shelf Categories</h5>
+                                <div class="shelf-categories">
+                                    <select id="shelf-category" onchange="changeShelfCategory()">
+                                        <option value="mobile-phones">📱 Mobile Phones</option>
+                                        <option value="laptops-tablets">💻 Laptops & Tablets</option>
+                                        <option value="headphones-accessories">🎧 Headphones & Accessories</option>
+                                        <option value="mens-clothing">👔 Men's Clothing</option>
+                                        <option value="womens-clothing">👗 Women's Clothing</option>
+                                        <option value="footwear">👟 Footwear</option>
+                                        <option value="kitchen-appliances">🍳 Kitchen Appliances</option>
+                                        <option value="packaged-food">🍪 Packaged Food & Snacks</option>
+                                        <option value="beverages">☕ Beverages</option>
+                                        <option value="medicines">💊 Medicines & First Aid</option>
+                                        <option value="books">📚 Books</option>
+                                        <option value="stationery">✏️ Stationery & Office Supplies</option>
+                                        <option value="toys-games">🎮 Toys & Games</option>
+                                        <option value="fitness-equipment">🏋️ Fitness Equipment</option>
+                                        <option value="pet-supplies">🐕 Pet Food & Supplies</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="tool-section">
+                                <h5><i class="fas fa-cog me-2"></i>Grid Settings</h5>
+                                <div class="grid-settings">
+                                    <div class="setting-group">
+                                        <label for="grid-size">Grid Size:</label>
+                                        <select id="grid-size" onchange="changeGridSize()">
+                                            <option value="20">20x20</option>
+                                            <option value="30" selected>30x30</option>
+                                            <option value="40">40x40</option>
+                                            <option value="50">50x50</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-group">
+                                        <label for="cell-size">Cell Size:</label>
+                                        <input type="range" id="cell-size" value="20" min="15" max="30" onchange="updateCellSize()">
+                                        <span id="cell-size-value">20px</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tool-section">
+                                <h5><i class="fas fa-info-circle me-2"></i>Layout Info</h5>
+                                <div class="layout-stats">
+                                    <div class="stat-item">
+                                        <span class="stat-label">Total Shelves:</span>
+                                        <span class="stat-value" id="shelf-count">0</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Packing Stations:</span>
+                                        <span class="stat-value" id="packing-count">0</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Entry Points:</span>
+                                        <span class="stat-value" id="entry-count">0</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Exit Points:</span>
+                                        <span class="stat-value" id="exit-count">0</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Charging Stations:</span>
+                                        <span class="stat-value" id="charging-count">0</span>
+                                    </div>
+                                </div>
+                                <div class="shelf-categories-stats" id="shelf-categories-stats">
+                                    <!-- Category breakdown will be shown here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="layout-grid-container">
+                            <div class="grid-header">
+                                <h5><i class="fas fa-th me-2"></i>Warehouse Grid</h5>
+                                <div class="grid-controls">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="generateRandomLayout()">
+                                        <i class="fas fa-random me-1"></i>Random Layout
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success" onclick="applyLayout()">
+                                        <i class="fas fa-check me-1"></i>Apply
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="layout-grid" id="layout-grid">
+                                <!-- Grid will be generated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventory Section -->
+                <div id="inventory" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-boxes me-2"></i>Inventory Management</h2>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" onclick="addInventoryItem()">
+                                <i class="fas fa-plus me-1"></i>Add Item
+                            </button>
+                            <button class="btn btn-warning" onclick="restockInventory()">
+                                <i class="fas fa-sync me-1"></i>Restock
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="inventory-grid" id="inventory-grid">
+                        <!-- Inventory items will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Orders Section -->
+                <div id="orders" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-shopping-cart me-2"></i>Order Management</h2>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" onclick="createOrder()">
+                                <i class="fas fa-plus me-1"></i>Create Order
+                            </button>
+                            <button class="btn btn-info" onclick="batchProcess()">
+                                <i class="fas fa-layer-group me-1"></i>Batch Process
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="orders-container">
+                        <div class="orders-list" id="orders-list">
+                            <!-- Orders will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Robots Section -->
+                <div id="robots" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-robot me-2"></i>Robot Fleet Management</h2>
+                        <div class="header-actions">
+                            <button class="btn btn-success" onclick="addRobot()">
+                                <i class="fas fa-plus me-1"></i>Add Robot
+                            </button>
+                            <button class="btn btn-warning" onclick="maintenanceMode()">
+                                <i class="fas fa-tools me-1"></i>Maintenance
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="robots-grid" id="robots-grid">
+                        <!-- Robot cards will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Analytics Section -->
+                <div id="analytics" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-chart-bar me-2"></i>Advanced Analytics</h2>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" onclick="generateReport()">
+                                <i class="fas fa-file-alt me-1"></i>Generate Report
+                            </button>
+                            <button class="btn btn-info" onclick="exportAnalytics()">
+                                <i class="fas fa-download me-1"></i>Export Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="analytics-dashboard">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="chart-card">
+                                    <h5>Performance Trends</h5>
+                                    <canvas id="performanceChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="chart-card">
+                                    <h5>Efficiency Metrics</h5>
+                                    <canvas id="efficiencyChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Insights Section -->
+                <div id="ai" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-brain me-2"></i>AI-Powered Insights</h2>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" onclick="generatePredictions()">
+                                <i class="fas fa-crystal-ball me-1"></i>Generate Predictions
+                            </button>
+                            <button class="btn btn-success" onclick="trainModels()">
+                                <i class="fas fa-graduation-cap me-1"></i>Train Models
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="ai-insights">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="insight-card">
+                                    <h5>Demand Forecasting</h5>
+                                    <div id="demand-forecast"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="insight-card">
+                                    <h5>Risk Assessment</h5>
+                                    <div id="risk-assessment"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Optimization Section -->
+                <div id="optimization" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-magic me-2"></i>Warehouse Optimization</h2>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" onclick="runOptimization()">
+                                <i class="fas fa-rocket me-1"></i>Run Optimization
+                            </button>
+                            <button class="btn btn-info" onclick="showOptimizationHistory()">
+                                <i class="fas fa-history me-1"></i>History
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="optimization-dashboard">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="optimization-card">
+                                    <h5>Optimization Results</h5>
+                                    <div id="optimization-results"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="recommendations-card">
+                                    <h5>AI Recommendations</h5>
+                                    <div id="ai-recommendations"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+                <!-- Simulation Section -->
+                <div id="simulation" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-play me-2"></i>Order Fulfillment Simulation</h2>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" onclick="startSimulation()">
+                                <i class="fas fa-play me-1"></i>Start Simulation
+                            </button>
+                            <button class="btn btn-warning" onclick="pauseSimulation()">
+                                <i class="fas fa-pause me-1"></i>Pause
+                            </button>
+                            <button class="btn btn-danger" onclick="stopSimulation()">
+                                <i class="fas fa-stop me-1"></i>Stop
+                            </button>
+                            <button class="btn btn-success" onclick="resetSimulation()">
+                                <i class="fas fa-redo me-1"></i>Reset
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="simulation-container">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="simulation-grid-container">
+                                    <div class="simulation-header">
+                                        <h5><i class="fas fa-th me-2"></i>Warehouse Grid</h5>
+                                        <div class="simulation-controls">
+                                            <div class="control-group">
+                                                <label for="bot-count">Number of Bots:</label>
+                                                <input type="number" id="bot-count" min="1" max="10" value="3" class="form-control">
+                                            </div>
+                                            <div class="control-group">
+                                                <label for="simulation-speed">Speed:</label>
+                                                <input type="range" id="simulation-speed" min="0.1" max="2" step="0.1" value="1">
+                                                <span id="speed-value">1x</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="simulation-grid" id="simulation-grid">
+                                        <!-- Simulation grid will be rendered here -->
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="simulation-info">
+                                    <div class="info-card">
+                                        <h5><i class="fas fa-info-circle me-2"></i>Simulation Info</h5>
+                                        <div class="info-item">
+                                            <span class="info-label">Status:</span>
+                                            <span id="simulation-status" class="info-value">Ready</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Number of Orders:</span>
+                                            <span id="simulation-orders" class="info-value">0</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Total Orders Placed:</span>
+                                            <span id="simulation-total-placed" class="info-value">0</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Orders Completed:</span>
+                                            <span id="simulation-completed" class="info-value">0</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Total Distance Travelled:</span>
+                                            <span id="simulation-total-distance" class="info-value">0</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Total Time Taken:</span>
+                                            <span id="simulation-time" class="info-value">00:00</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Average Time per Order:</span>
+                                            <span id="simulation-avg-time" class="info-value">0s</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Layout Efficiency:</span>
+                                            <span id="simulation-efficiency" class="info-value">100%</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="bot-status-card">
+                                        <h5><i class="fas fa-robot me-2"></i>Bot Status</h5>
+                                        <div id="bot-status-list">
+                                            <!-- Bot status will be shown here -->
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="order-progress-card">
+                                        <h5><i class="fas fa-list me-2"></i>Order Progress</h5>
+                                        <div id="order-progress-list">
+                                            <!-- Order progress will be shown here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Readings Section -->
+                <div id="readings" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-chart-line me-2"></i>Simulation Readings</h2>
+                        <div class="header-actions">
+                            <button class="btn btn-info" onclick="viewHeatmap()">
+                                <i class="fas fa-fire me-1"></i>View Heatmap
+                            </button>
+                            <button class="btn btn-primary" onclick="exportReadings()">
+                                <i class="fas fa-download me-1"></i>Export Data
+                            </button>
+                            <button class="btn btn-success" onclick="generateReport()">
+                                <i class="fas fa-file-alt me-1"></i>Generate Report
+                            </button>
+                            <button class="btn btn-warning" onclick="clearReadings()">
+                                <i class="fas fa-trash me-1"></i>Clear Data
+                            </button>
+                            <button class="btn btn-primary" id="optimize-rl-btn" onclick="optimizeWithRL()">
+                                <i class="fas fa-brain me-1"></i>Optimize with RL
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="readings-container">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="readings-table-container">
+                                    <h5><i class="fas fa-table me-2"></i>Order Fulfillment Data</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-striped" id="readings-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Order ID</th>
+                                                    <th>Product</th>
+                                                    <th>Category</th>
+                                                    <th>Shelf Location</th>
+                                                    <th>Path Length</th>
+                                                    <th>Time Taken</th>
+                                                    <th>Bot Used</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="readings-tbody">
+                                                <!-- Reading data will be populated here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="readings-summary">
+                                    <div class="summary-card">
+                                        <h5><i class="fas fa-chart-pie me-2"></i>Summary Statistics</h5>
+                                        <div class="summary-item">
+                                            <span class="summary-label">Total Orders:</span>
+                                            <span id="total-orders-readings" class="summary-value">0</span>
+                                        </div>
+                                        <div class="summary-item">
+                                            <span class="summary-label">Average Path Length:</span>
+                                            <span id="avg-path-length" class="summary-value">0</span>
+                                        </div>
+                                        <div class="summary-item">
+                                            <span class="summary-label">Average Time:</span>
+                                            <span id="avg-time" class="summary-value">0s</span>
+                                        </div>
+                                        <div class="summary-item">
+                                            <span class="summary-label">Total Distance:</span>
+                                            <span id="total-distance" class="summary-value">0</span>
+                                        </div>
+                                        <div class="summary-item">
+                                            <span class="summary-label">Efficiency Score:</span>
+                                            <span id="efficiency-score" class="summary-value">0%</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="charts-card">
+                                        <h5><i class="fas fa-chart-bar me-2"></i>Performance Charts</h5>
+                                        <canvas id="pathLengthChart"></canvas>
+                                        <canvas id="timeChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Compare Layouts Section -->
+                <div id="compare-layouts" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-brain me-2"></i>Compare Layouts - RL Optimization</h2>
+                        <div class="header-actions">
+                            <button class="btn btn-success" onclick="applyOptimizedLayout()">
+                                <i class="fas fa-check me-1"></i>Apply Optimized Layout
+                            </button>
+                            <button class="btn btn-primary" onclick="exportOptimizationReport()">
+                                <i class="fas fa-download me-1"></i>Export Report
+                            </button>
+                            <button class="btn btn-secondary" onclick="goBackToReadings()">
+                                <i class="fas fa-arrow-left me-1"></i>Back to Readings
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="optimization-status" id="optimization-status">
+                        <div class="optimization-progress">
+                            <div class="progress-header">
+                                <h5><i class="fas fa-cogs me-2"></i>Reinforcement Learning Optimization in Progress...</h5>
+                                <p>Training AI agent to optimize warehouse layout for maximum efficiency</p>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="rl-progress-bar">
+                                    <div class="progress-fill" id="rl-progress-fill"></div>
+                                </div>
+                                <div class="progress-text" id="rl-progress-text">0%</div>
+                            </div>
+                            <div class="optimization-stats" id="optimization-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Episodes:</span>
+                                    <span class="stat-value" id="episode-count">0</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Best Score:</span>
+                                    <span class="stat-value" id="best-score">0</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Learning Rate:</span>
+                                    <span class="stat-value" id="learning-rate">0.001</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="layouts-comparison" id="layouts-comparison" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="layout-card">
+                                    <div class="layout-header">
+                                        <h5><i class="fas fa-warehouse me-2"></i>Original Custom Layout</h5>
+                                        <span class="layout-badge original">Original</span>
+                                    </div>
+                                    <div class="layout-grid-container">
+                                        <div class="layout-grid" id="original-layout-grid">
+                                            <!-- Original layout will be rendered here -->
+                                        </div>
+                                    </div>
+                                    <div class="layout-metrics">
+                                        <h6>Performance Metrics</h6>
+                                        <div class="metrics-grid">
+                                            <div class="metric-item">
+                                                <span class="metric-label">Total Distance:</span>
+                                                <span class="metric-value" id="original-total-distance">0</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Average Time:</span>
+                                                <span class="metric-value" id="original-avg-time">0s</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Efficiency Score:</span>
+                                                <span class="metric-value" id="original-efficiency">0%</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Path Length:</span>
+                                                <span class="metric-value" id="original-path-length">0</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="layout-card optimized">
+                                    <div class="layout-header">
+                                        <h5><i class="fas fa-rocket me-2"></i>AI Optimized Layout</h5>
+                                        <span class="layout-badge optimized">Optimized</span>
+                                    </div>
+                                    <div class="layout-grid-container">
+                                        <div class="layout-grid" id="optimized-layout-grid">
+                                            <!-- Optimized layout will be rendered here -->
+                                        </div>
+                                    </div>
+                                    <div class="layout-metrics">
+                                        <h6>Performance Metrics</h6>
+                                        <div class="metrics-grid">
+                                            <div class="metric-item">
+                                                <span class="metric-label">Total Distance:</span>
+                                                <span class="metric-value" id="optimized-total-distance">0</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Average Time:</span>
+                                                <span class="metric-value" id="optimized-avg-time">0s</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Efficiency Score:</span>
+                                                <span class="metric-value" id="optimized-efficiency">0%</span>
+                                            </div>
+                                            <div class="metric-item">
+                                                <span class="metric-label">Path Length:</span>
+                                                <span class="metric-value" id="optimized-path-length">0</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="comparison-summary">
+                            <div class="comparison-card">
+                                <h5><i class="fas fa-chart-line me-2"></i>Performance Comparison</h5>
+                                <div class="comparison-metrics">
+                                    <div class="comparison-item improvement">
+                                        <div class="comparison-header">
+                                            <span class="comparison-label">Total Distance Reduction</span>
+                                            <span class="improvement-badge" id="distance-improvement">0%</span>
+                                        </div>
+                                        <div class="comparison-bar">
+                                            <div class="bar-fill" id="distance-bar-fill"></div>
+                                        </div>
+                                    </div>
+                                    <div class="comparison-item improvement">
+                                        <div class="comparison-header">
+                                            <span class="comparison-label">Time Improvement</span>
+                                            <span class="improvement-badge" id="time-improvement">0%</span>
+                                        </div>
+                                        <div class="comparison-bar">
+                                            <div class="bar-fill" id="time-bar-fill"></div>
+                                        </div>
+                                    </div>
+                                    <div class="comparison-item improvement">
+                                        <div class="comparison-header">
+                                            <span class="comparison-label">Efficiency Gain</span>
+                                            <span class="improvement-badge" id="efficiency-improvement">0%</span>
+                                        </div>
+                                        <div class="comparison-bar">
+                                            <div class="bar-fill" id="efficiency-bar-fill"></div>
+                                        </div>
+                                    </div>
+                                    <div class="comparison-item improvement">
+                                        <div class="comparison-header">
+                                            <span class="comparison-label">Overall Performance</span>
+                                            <span class="improvement-badge" id="overall-improvement">0%</span>
+                                        </div>
+                                        <div class="comparison-bar">
+                                            <div class="bar-fill" id="overall-bar-fill"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="optimization-insights">
+                            <div class="insights-card">
+                                <h5><i class="fas fa-lightbulb me-2"></i>AI Optimization Insights</h5>
+                                <div class="insights-content" id="optimization-insights">
+                                    <!-- AI insights will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications -->
+        <div id="notifications" class="notifications-container"></div>
+
+        <!-- Modals -->
+        <div class="modal fade" id="orderModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Create New Order</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="orderForm">
+                            <div class="mb-3">
+                                <label class="form-label">Customer Name</label>
+                                <input type="text" class="form-control" id="customerName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Priority</label>
+                                <select class="form-select" id="orderPriority">
+                                    <option value="low">Low</option>
+                                    <option value="normal" selected>Normal</option>
+                                    <option value="high">High</option>
+                                    <option value="urgent">Urgent</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Items</label>
+                                <div id="orderItems">
+                                    <div class="order-item">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <select class="form-select" name="product">
+                                                    <option value="">Select Product</option>
+                                                    <!-- Products will be populated dynamically -->
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <input type="number" class="form-control" name="quantity" placeholder="Qty" min="1">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <button type="button" class="btn btn-danger btn-sm" onclick="removeOrderItem(this)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="addOrderItem()">
+                                    <i class="fas fa-plus me-1"></i>Add Item
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="submitOrder()">Create Order</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="/static/js/app.js"></script>
+
+    <script src="/static/js/warehouse2d.js"></script>
+    <script src="/static/js/charts.js"></script>
+    <script src="/static/js/websocket.js"></script>
+    <script src="/static/js/layout-editor.js"></script>
+    <script src="/static/js/simulation.js"></script>
+    <script src="/static/js/rl-optimization.js"></script>
+</body>
+</html> 
