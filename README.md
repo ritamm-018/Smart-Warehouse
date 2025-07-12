@@ -1,6 +1,5 @@
 # 🏆 Smart Warehouse Simulator - AI-Powered Management System
 
-> **The Ultimate Hackathon Winner - A Comprehensive AI-Powered Warehouse Management Solution**
 
 ![Smart Warehouse Simulator](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
 ![Python](https://img.shields.io/badge/Python-3.8+-blue)
@@ -10,9 +9,9 @@
 
 ## 🚀 Overview
 
-This is a **revolutionary smart warehouse simulator** that combines cutting-edge AI/ML technologies with real-time 3D visualization to create the most impressive hackathon project ever built. Designed to win first place in any competition, this system demonstrates the future of warehouse automation and intelligent logistics management.
+This is a **revolutionary smart warehouse simulator** that combines cutting-edge AI/ML technologies with real-time visualization. This system demonstrates the future of warehouse automation and intelligent logistics management.
 
-## ✨ Key Features That Will Blow Judges Away
+## ✨ Key Features:
 
 ### 🤖 **AI-Powered Intelligence**
 - **Machine Learning Models**: Demand forecasting, route optimization, and predictive analytics
@@ -215,8 +214,7 @@ The system tracks and optimizes:
 - **Predictive Models**: Maintenance and optimization
 - **Real-time Analytics**: Performance monitoring
 
-## 🏆 Why This Will Win First Place
-
+Top features:
 ### **1. Technical Excellence**
 - Full-stack application with modern technologies
 - Real-time AI/ML integration
@@ -283,7 +281,7 @@ docker run -p 8000:8000 smart-warehouse
 ## 📞 Support
 
 For questions, issues, or collaboration opportunities:
-- **Email**: support@smartwarehouse.com
+- **Email**: ritammdutta2005@gmail.com
 - **Documentation**: [Full Documentation](docs/)
 - **Demo**: [Live Demo](https://demo.smartwarehouse.com)
 
@@ -293,20 +291,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 🎯 **Ready to Win Your Hackathon?**
-
-This Smart Warehouse Simulator is designed to be the most impressive project in any hackathon. With its combination of cutting-edge AI/ML, real-time 3D visualization, and professional-grade implementation, it demonstrates the future of intelligent warehouse management.
-
-**Key Winning Factors:**
-- ✅ **Technical Complexity**: Full-stack AI-powered application
-- ✅ **Innovation**: Real-time optimization and 3D visualization
-- ✅ **User Experience**: Professional, intuitive interface
-- ✅ **Business Value**: Measurable efficiency improvements
-- ✅ **Presentation**: Impressive live demonstrations
-- ✅ **Scalability**: Production-ready architecture
-
-**Start the application, explore the features, and prepare to win first place!** 🏆
-
----
-
-*Built with ❤️ for hackathon success* 
