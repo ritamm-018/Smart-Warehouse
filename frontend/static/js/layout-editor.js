@@ -646,6 +646,55 @@ class LayoutEditor {
             categoryCounts[category] = 0;
         });
         
+        // Use historical frequency data for realistic order generation
+        const frequencyData = this.getHistoricalFrequencyData();
+        const availableCategories = placedCategories.filter(cat => frequencyData[cat]);
+        
+        if (availableCategories.length === 0) {
+            // Fallback to random generation if no frequency data
+            this.generateRandomOrdersFallback(numOrders, placedCategories, categoryCounts);
+            return;
+        }
+        
+        // Calculate total frequency for available categories
+        const totalFrequency = availableCategories.reduce((sum, cat) => sum + frequencyData[cat], 0);
+        
+        // Generate orders based on historical frequency
+        for (let i = 0; i < numOrders; i++) {
+            // Choose category based on frequency weights
+            const randomValue = Math.random() * totalFrequency;
+            let cumulativeFrequency = 0;
+            let selectedCategory = availableCategories[0];
+            
+            for (const category of availableCategories) {
+                cumulativeFrequency += frequencyData[category];
+                if (randomValue <= cumulativeFrequency) {
+                    selectedCategory = category;
+                    break;
+                }
+            }
+            
+            // Get popular products for this category
+            const popularProducts = this.getPopularProducts(selectedCategory);
+            const product = popularProducts[Math.floor(Math.random() * popularProducts.length)];
+            
+            orders.push({
+                id: i + 1,
+                product: product,
+                category: selectedCategory,
+                frequency_weight: frequencyData[selectedCategory]
+            });
+            
+            categoryCounts[selectedCategory]++;
+        }
+        
+        this.currentOrders = orders;
+        this.displayOrders(orders, categoryCounts, numOrders);
+    }
+    
+    generateRandomOrdersFallback(numOrders, placedCategories, categoryCounts) {
+        const orders = [];
+        
         // Generate random orders only from placed categories
         for (let i = 0; i < numOrders; i++) {
             const category = placedCategories[Math.floor(Math.random() * placedCategories.length)];
@@ -663,6 +712,84 @@ class LayoutEditor {
         
         this.currentOrders = orders;
         this.displayOrders(orders, categoryCounts, numOrders);
+    }
+    
+    getHistoricalFrequencyData() {
+        // Historical order frequency data (matches backend data)
+        return {
+            "mobile-phones": 35,
+            "laptops-tablets": 25,
+            "packaged-food": 50,
+            "headphones-accessories": 20,
+            "mens-clothing": 15,
+            "toys-games": 12,
+            "pet-supplies": 8,
+            "kitchen-appliances": 5
+        };
+    }
+    
+    getPopularProducts(category) {
+        // Popular products for each category (matches backend data)
+        const popularProducts = {
+            "mobile-phones": [
+                "Apple iPhone 15 Pro",
+                "Samsung Galaxy S24 Ultra",
+                "OnePlus 12",
+                "Google Pixel 8",
+                "Xiaomi 14"
+            ],
+            "laptops-tablets": [
+                "MacBook Air M2",
+                "Dell XPS 13",
+                "iPad Pro 12.9",
+                "Lenovo ThinkPad X1",
+                "Samsung Galaxy Tab S9"
+            ],
+            "packaged-food": [
+                "Chips and namkeen",
+                "Biscuits and cookies",
+                "Instant noodles",
+                "Snack bars",
+                "Beverages"
+            ],
+            "headphones-accessories": [
+                "AirPods Pro",
+                "Sony WH-1000XM5",
+                "Samsung Galaxy Buds",
+                "Phone cases",
+                "Charging cables"
+            ],
+            "mens-clothing": [
+                "T-shirts and shirts",
+                "Jeans and pants",
+                "Formal wear",
+                "Casual jackets",
+                "Accessories"
+            ],
+            "toys-games": [
+                "Educational toys",
+                "Puzzle sets",
+                "Board games",
+                "Action figures",
+                "Building blocks"
+            ],
+            "pet-supplies": [
+                "Pet food",
+                "Pet toys",
+                "Pet beds and mats",
+                "Grooming supplies",
+                "Health products"
+            ],
+            "kitchen-appliances": [
+                "Microwave ovens",
+                "Blenders and mixers",
+                "Coffee makers",
+                "Toasters",
+                "Small appliances"
+            ]
+        };
+        
+        return popularProducts[category] || this.productCatalog[category] || ["Product"];
     }
     
     displayNoOrdersMessage() {
@@ -689,15 +816,19 @@ class LayoutEditor {
         const orderList = document.getElementById('order-list');
         const orderCategories = document.getElementById('order-categories');
         
-        // Display order list
+        // Display order list with frequency data
         let orderListHTML = '<div class="orders-header"><h4>Order List:</h4></div>';
         orderListHTML += '<div class="orders-grid">';
         
         orders.forEach(order => {
+            const frequencyWeight = order.frequency_weight || 0;
             orderListHTML += `
                 <div class="order-item">
                     <span class="order-number">${order.id}.</span>
                     <span class="order-product">${order.product}</span>
+                    <span class="order-frequency" title="Frequency weight: ${frequencyWeight}">
+                        <i class="fas fa-fire"></i> ${frequencyWeight}
+                    </span>
                 </div>
             `;
         });
@@ -705,28 +836,60 @@ class LayoutEditor {
         orderListHTML += '</div>';
         orderList.innerHTML = orderListHTML;
         
-        // Display category breakdown
-        let categoryHTML = '<div class="categories-header"><h4>Orders by Category:</h4></div>';
+        // Display category breakdown with frequency comparison
+        let categoryHTML = '<div class="categories-header"><h4>Orders by Category (vs Historical):</h4></div>';
         categoryHTML += '<div class="categories-grid">';
+        
+        const frequencyData = this.getHistoricalFrequencyData();
         
         Object.keys(categoryCounts).forEach(category => {
             const count = categoryCounts[category];
             if (count > 0) {
                 const categoryName = this.shelfCategories[category];
                 const percentage = ((count / totalOrders) * 100).toFixed(1);
+                const historicalFreq = frequencyData[category] || 0;
+                const freqMatch = Math.abs(percentage - historicalFreq) < 5 ? '✅' : '⚠️';
                 
                 categoryHTML += `
                     <div class="category-item">
                         <div class="category-info">
                             <span class="category-name">${categoryName}</span>
-                            <span class="category-count">${count} orders (${percentage}%)</span>
+                            <span class="category-count">
+                                ${count} orders (${percentage}%) ${freqMatch}
+                                <small class="historical-freq">Historical: ${historicalFreq}%</small>
+                            </span>
                         </div>
                         <div class="category-bar">
                             <div class="category-bar-fill" style="width: ${percentage}%"></div>
+                            <div class="historical-marker" style="left: ${historicalFreq}%" title="Historical frequency"></div>
                         </div>
                     </div>
                 `;
             }
+        });
+        
+        categoryHTML += '</div>';
+        
+        // Add frequency insights
+        categoryHTML += '<div class="frequency-insights">';
+        categoryHTML += '<h5><i class="fas fa-chart-line me-1"></i>Frequency Insights:</h5>';
+        
+        const topCategories = Object.entries(frequencyData)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 3);
+        
+        topCategories.forEach(([category, freq]) => {
+            const actualCount = categoryCounts[category] || 0;
+            const actualPercentage = ((actualCount / totalOrders) * 100).toFixed(1);
+            const variance = Math.abs(freq - actualPercentage).toFixed(1);
+            const categoryName = this.shelfCategories[category];
+            
+            categoryHTML += `
+                <div class="insight-item">
+                    <strong>${categoryName}:</strong> Expected ${freq}%, Got ${actualPercentage}% 
+                    <span class="variance ${variance < 5 ? 'good' : 'warning'}">(±${variance}%)</span>
+                </div>
+            `;
         });
         
         categoryHTML += '</div>';

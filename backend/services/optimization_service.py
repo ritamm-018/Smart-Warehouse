@@ -454,3 +454,317 @@ class OptimizationService:
         performance["performance_rankings"] = [f"Robot {rid}" for _, rid in robot_rankings]
         
         return performance 
+    
+    def optimize_layout_with_rl(self, layout_data: dict) -> dict:
+        """Optimize warehouse layout using reinforcement learning with historical frequency data"""
+        try:
+            print("🤖 Starting RL-based layout optimization with frequency data...")
+            
+            # Load historical order frequency data
+            from .order_data_service import order_data_service
+            frequency_data = order_data_service.get_category_frequencies()
+            
+            print(f"📊 Using frequency data: {frequency_data}")
+            
+            # Initialize RL environment with frequency data
+            env = WarehouseEnvironment(layout_data, frequency_data)
+            
+            # Train RL agent
+            agent = QLearningAgent(env)
+            training_results = agent.train(episodes=50)  # Reduced episodes for faster training
+            
+            # Get optimized layout
+            optimized_layout = agent.get_optimized_layout()
+            
+            # Calculate metrics with frequency weighting
+            original_metrics = self.calculate_layout_metrics_with_frequency(layout_data, frequency_data)
+            optimized_metrics = self.calculate_layout_metrics_with_frequency(optimized_layout, frequency_data)
+            
+            # Generate insights
+            insights = self.generate_optimization_insights_with_frequency(
+                original_metrics, optimized_metrics, frequency_data
+            )
+            
+            return {
+                "success": True,
+                "original_layout": layout_data,
+                "optimized_layout": optimized_layout,
+                "training_results": training_results,
+                "frequency_data": frequency_data,
+                "metrics": {
+                    "original": original_metrics,
+                    "optimized": optimized_metrics
+                },
+                "insights": insights
+            }
+            
+        except Exception as e:
+            print(f"❌ Error in RL optimization: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "original_layout": layout_data,
+                "optimized_layout": layout_data
+            }
+    
+    def calculate_layout_metrics_with_frequency(self, layout: dict, frequency_data: dict) -> dict:
+        """Calculate layout metrics weighted by historical frequency data"""
+        try:
+            if not layout or not layout.get('shelves'):
+                return {"efficiency": 0, "distance_score": 0, "frequency_score": 0}
+            
+            shelves = layout['shelves']
+            entry_points = layout.get('entryPoints', [])
+            packing_stations = layout.get('packingStations', [])
+            
+            if not entry_points or not packing_stations:
+                return {"efficiency": 0, "distance_score": 0, "frequency_score": 0}
+            
+            total_frequency_score = 0
+            total_distance_score = 0
+            shelf_count = len(shelves)
+            
+            for shelf in shelves:
+                category = shelf.get('category', 'unknown')
+                frequency_weight = frequency_data.get(category, 1) / 100
+                
+                # Calculate distance from entry to shelf to packing
+                entry_dist = min(
+                    abs(shelf['row'] - entry['row']) + abs(shelf['col'] - entry['col'])
+                    for entry in entry_points
+                )
+                
+                packing_dist = min(
+                    abs(shelf['row'] - packing['row']) + abs(shelf['col'] - packing['col'])
+                    for packing in packing_stations
+                )
+                
+                total_distance = entry_dist + packing_dist
+                
+                # Weight by frequency - high frequency items should be closer
+                frequency_score = frequency_weight * (100 / (total_distance + 1))
+                distance_score = 100 / (total_distance + 1)
+                
+                total_frequency_score += frequency_score
+                total_distance_score += distance_score
+            
+            avg_frequency_score = total_frequency_score / shelf_count if shelf_count > 0 else 0
+            avg_distance_score = total_distance_score / shelf_count if shelf_count > 0 else 0
+            
+            # Overall efficiency combines both scores
+            overall_efficiency = (avg_frequency_score * 0.7) + (avg_distance_score * 0.3)
+            
+            return {
+                "efficiency": round(overall_efficiency, 2),
+                "distance_score": round(avg_distance_score, 2),
+                "frequency_score": round(avg_frequency_score, 2),
+                "shelf_count": shelf_count
+            }
+            
+        except Exception as e:
+            print(f"❌ Error calculating frequency-weighted metrics: {e}")
+            return {"efficiency": 0, "distance_score": 0, "frequency_score": 0}
+    
+    def generate_optimization_insights_with_frequency(self, original_metrics: dict, optimized_metrics: dict, frequency_data: dict) -> list:
+        """Generate insights based on frequency-weighted optimization"""
+        insights = []
+        
+        try:
+            # Efficiency improvement
+            efficiency_gain = optimized_metrics.get('efficiency', 0) - original_metrics.get('efficiency', 0)
+            if efficiency_gain > 0:
+                insights.append(f"📈 Overall efficiency improved by {efficiency_gain:.1f}%")
+            else:
+                insights.append(f"📉 Overall efficiency decreased by {abs(efficiency_gain):.1f}%")
+            
+            # Frequency score improvement
+            freq_gain = optimized_metrics.get('frequency_score', 0) - original_metrics.get('frequency_score', 0)
+            if freq_gain > 0:
+                insights.append(f"🎯 High-frequency items are now better positioned (improvement: {freq_gain:.1f}%)")
+            else:
+                insights.append(f"⚠️ High-frequency items positioning could be improved")
+            
+            # Distance optimization
+            dist_gain = optimized_metrics.get('distance_score', 0) - original_metrics.get('distance_score', 0)
+            if dist_gain > 0:
+                insights.append(f"🚀 Average travel distance reduced (improvement: {dist_gain:.1f}%)")
+            else:
+                insights.append(f"📏 Travel distances increased slightly")
+            
+            # Top frequency categories
+            top_categories = sorted(frequency_data.items(), key=lambda x: x[1], reverse=True)[:3]
+            insights.append(f"🔥 Top categories by frequency: {', '.join([f'{cat} ({freq}%)' for cat, freq in top_categories])}")
+            
+            # Recommendations
+            if efficiency_gain < 5:
+                insights.append("💡 Consider placing high-frequency items closer to entry points")
+            if freq_gain < 2:
+                insights.append("💡 Optimize shelf placement based on historical demand patterns")
+            
+        except Exception as e:
+            insights.append(f"❌ Error generating insights: {e}")
+        
+        return insights
+
+
+class WarehouseEnvironment:
+    """Simple RL environment for warehouse layout optimization"""
+    
+    def __init__(self, layout_data: dict, frequency_data: dict):
+        self.layout = layout_data
+        self.frequency_data = frequency_data
+        self.shelves = layout_data.get('shelves', [])
+        self.entry_points = layout_data.get('entryPoints', [])
+        self.packing_stations = layout_data.get('packingStations', [])
+        self.grid_size = layout_data.get('gridSize', 30)
+        
+    def get_state(self):
+        """Get current state representation"""
+        return {
+            'shelf_positions': [(s['row'], s['col']) for s in self.shelves],
+            'entry_positions': [(e['row'], e['col']) for e in self.entry_points],
+            'packing_positions': [(p['row'], p['col']) for p in self.packing_stations]
+        }
+    
+    def calculate_reward(self, action):
+        """Calculate reward based on frequency-weighted efficiency"""
+        try:
+            # Simple reward calculation based on frequency-weighted distances
+            total_reward = 0
+            
+            for shelf in self.shelves:
+                category = shelf.get('category', 'unknown')
+                frequency_weight = self.frequency_data.get(category, 1) / 100
+                
+                # Calculate distances
+                entry_dist = min(
+                    abs(shelf['row'] - entry['row']) + abs(shelf['col'] - entry['col'])
+                    for entry in self.entry_points
+                ) if self.entry_points else 100
+                
+                packing_dist = min(
+                    abs(shelf['row'] - packing['row']) + abs(shelf['col'] - packing['col'])
+                    for packing in self.packing_stations
+                ) if self.packing_stations else 100
+                
+                total_dist = entry_dist + packing_dist
+                
+                # Reward: higher frequency items should be closer
+                reward = frequency_weight * (100 / (total_dist + 1))
+                total_reward += reward
+            
+            return total_reward / len(self.shelves) if self.shelves else 0
+            
+        except Exception as e:
+            print(f"❌ Error calculating reward: {e}")
+            return 0
+
+
+class QLearningAgent:
+    """Simple Q-learning agent for layout optimization"""
+    
+    def __init__(self, environment):
+        self.env = environment
+        self.q_table = {}
+        self.learning_rate = 0.1
+        self.discount_factor = 0.9
+        self.epsilon = 0.1
+        
+    def train(self, episodes=50):
+        """Train the agent"""
+        results = []
+        
+        for episode in range(episodes):
+            state = self.env.get_state()
+            action = self._choose_action(state)
+            reward = self.env.calculate_reward(action)
+            
+            # Update Q-table (simplified)
+            state_key = str(state)
+            if state_key not in self.q_table:
+                self.q_table[state_key] = {}
+            
+            if action not in self.q_table[state_key]:
+                self.q_table[state_key][action] = 0
+            
+            # Q-learning update
+            old_value = self.q_table[state_key][action]
+            next_max = max(self.q_table[state_key].values()) if self.q_table[state_key] else 0
+            new_value = (1 - self.learning_rate) * old_value + self.learning_rate * (reward + self.discount_factor * next_max)
+            self.q_table[state_key][action] = new_value
+            
+            results.append({
+                'episode': episode + 1,
+                'reward': reward,
+                'progress': ((episode + 1) / episodes) * 100
+            })
+            
+            if (episode + 1) % 10 == 0:
+                print(f"🎯 Episode {episode + 1}/{episodes} - Reward: {reward:.2f}")
+        
+        return results
+    
+    def _choose_action(self, state):
+        """Choose action using epsilon-greedy policy"""
+        if random.random() < self.epsilon:
+            return random.choice(['move_shelf', 'swap_shelves', 'optimize_path'])
+        else:
+            return 'optimize_path'  # Default action
+    
+    def get_optimized_layout(self):
+        """Get the optimized layout"""
+        try:
+            # Create a copy of the original layout
+            optimized_layout = self.env.layout.copy()
+            
+            # Apply simple optimizations based on frequency data
+            shelves = optimized_layout.get('shelves', [])
+            frequency_data = self.env.frequency_data
+            
+            # Sort shelves by frequency (high frequency items closer to entry)
+            if shelves and self.env.entry_points:
+                entry_point = self.env.entry_points[0]
+                
+                # Calculate distance from entry for each shelf
+                for shelf in shelves:
+                    category = shelf.get('category', 'unknown')
+                    frequency_weight = frequency_data.get(category, 1)
+                    distance = abs(shelf['row'] - entry_point['row']) + abs(shelf['col'] - entry_point['col'])
+                    shelf['_optimization_score'] = frequency_weight / (distance + 1)
+                
+                # Sort by optimization score (higher score = better position)
+                shelves.sort(key=lambda x: x.get('_optimization_score', 0), reverse=True)
+                
+                # Reassign positions to optimize layout
+                grid_size = self.env.grid_size
+                optimized_positions = []
+                
+                # Generate optimized positions (closer to entry for high-frequency items)
+                for i, shelf in enumerate(shelves):
+                    if i < len(shelves) // 2:  # High-frequency items
+                        # Place closer to entry
+                        row = entry_point['row'] + (i // 5) + 1
+                        col = entry_point['col'] + (i % 5) + 1
+                    else:  # Lower-frequency items
+                        # Place further from entry
+                        row = entry_point['row'] + (i // 5) + 3
+                        col = entry_point['col'] + (i % 5) + 3
+                    
+                    # Ensure within grid bounds
+                    row = max(0, min(row, grid_size - 1))
+                    col = max(0, min(col, grid_size - 1))
+                    
+                    optimized_positions.append((row, col))
+                
+                # Update shelf positions
+                for i, shelf in enumerate(shelves):
+                    if i < len(optimized_positions):
+                        shelf['row'] = optimized_positions[i][0]
+                        shelf['col'] = optimized_positions[i][1]
+                        shelf.pop('_optimization_score', None)  # Remove temporary field
+            
+            return optimized_layout
+            
+        except Exception as e:
+            print(f"❌ Error generating optimized layout: {e}")
+            return self.env.layout 

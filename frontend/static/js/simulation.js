@@ -1558,13 +1558,20 @@ function generateHeatmapData(readings) {
     console.log('Generating heatmap for grid size:', gridSize);
     console.log('Warehouse layout:', layout);
     
-    // Track activity at shelf locations from readings
+    // Get historical frequency data for realistic heatmap
+    const frequencyData = getHistoricalFrequencyData();
+    
+    // Track activity at shelf locations from readings with frequency weighting
     readings.forEach(reading => {
         const location = reading.shelfLocation;
         if (location && location !== 'Auto-completed' && location !== 'Unknown') {
             const [row, col] = location.split(',').map(Number);
             if (row >= 0 && row < gridSize && col >= 0 && col < gridSize) {
-                heatmap[row][col] += 2; // Higher weight for shelf activity
+                // Apply frequency weighting to shelf activity
+                const category = reading.category;
+                const frequencyWeight = frequencyData[category] || 1;
+                const activityIntensity = Math.max(2, frequencyWeight / 10); // Base 2 + frequency bonus
+                heatmap[row][col] += activityIntensity;
             }
         }
     });
@@ -1575,18 +1582,21 @@ function generateHeatmapData(readings) {
             const row = station.row;
             const col = station.col;
             if (row >= 0 && row < gridSize && col >= 0 && col < gridSize) {
-                heatmap[row][col] += readings.length; // High activity at packing stations
+                heatmap[row][col] += readings.length * 1.5; // High activity at packing stations
             }
         });
     }
     
-    // Add activity at entry points
+    // Add activity at entry points with frequency-based weighting
     if (layout.entryPoints) {
         layout.entryPoints.forEach(point => {
             const row = point.row;
             const col = point.col;
             if (row >= 0 && row < gridSize && col >= 0 && col < gridSize) {
-                heatmap[row][col] += Math.floor(readings.length / 2); // Medium activity at entry
+                // Calculate total frequency of all categories in the warehouse
+                const totalFrequency = Object.values(frequencyData).reduce((sum, freq) => sum + freq, 0);
+                const entryActivity = Math.floor(readings.length / 2) + (totalFrequency / 100);
+                heatmap[row][col] += entryActivity;
             }
         });
     }
@@ -1602,32 +1612,8 @@ function generateHeatmapData(readings) {
         });
     }
     
-    // Add activity along paths (simulate bot movement)
-    readings.forEach(reading => {
-        if (reading.pathLength && reading.pathLength > 0) {
-            // Simulate path activity by adding activity to cells along the path
-            const shelfLocation = reading.shelfLocation;
-            if (shelfLocation && shelfLocation !== 'Auto-completed') {
-                const [shelfRow, shelfCol] = shelfLocation.split(',').map(Number);
-                
-                // Add activity along path from entry to shelf to packing to exit
-                if (layout.entryPoints && layout.entryPoints.length > 0) {
-                    const entry = layout.entryPoints[0];
-                    addPathActivity(heatmap, entry.row, entry.col, shelfRow, shelfCol, 1);
-                }
-                
-                if (layout.packingStations && layout.packingStations.length > 0) {
-                    const packing = layout.packingStations[0];
-                    addPathActivity(heatmap, shelfRow, shelfCol, packing.row, packing.col, 1);
-                    
-                    if (layout.exitPoints && layout.exitPoints.length > 0) {
-                        const exit = layout.exitPoints[0];
-                        addPathActivity(heatmap, packing.row, packing.col, exit.row, exit.col, 1);
-                    }
-                }
-            }
-        }
-    });
+    // Add path activity between components based on frequency
+    addFrequencyBasedPathActivity(heatmap, readings, layout, frequencyData);
     
     // Convert to heatmap format
     const heatmapData = [];
@@ -1648,6 +1634,70 @@ function generateHeatmapData(readings) {
         data: heatmapData,
         maxValue: Math.max(...heatmap.flat()),
         gridSize: gridSize,
+        layout: layout
+    };
+}
+
+function getHistoricalFrequencyData() {
+    // Historical order frequency data (matches backend data)
+    return {
+        "mobile-phones": 35,
+        "laptops-tablets": 25,
+        "packaged-food": 50,
+        "headphones-accessories": 20,
+        "mens-clothing": 15,
+        "toys-games": 12,
+        "pet-supplies": 8,
+        "kitchen-appliances": 5
+    };
+}
+
+function addFrequencyBasedPathActivity(heatmap, readings, layout, frequencyData) {
+    // Add activity along paths based on frequency of orders
+    readings.forEach(reading => {
+        const category = reading.category;
+        const frequencyWeight = frequencyData[category] || 1;
+        
+        // Add path activity from entry to shelf
+        if (layout.entryPoints && layout.entryPoints.length > 0) {
+            const entry = layout.entryPoints[0];
+            const shelfLocation = reading.shelfLocation;
+            if (shelfLocation && shelfLocation !== 'Auto-completed') {
+                const [shelfRow, shelfCol] = shelfLocation.split(',').map(Number);
+                addPathActivity(heatmap, entry.row, entry.col, shelfRow, shelfCol, frequencyWeight / 20);
+            }
+        }
+        
+        // Add path activity from shelf to packing
+        if (layout.packingStations && layout.packingStations.length > 0) {
+            const packing = layout.packingStations[0];
+            const shelfLocation = reading.shelfLocation;
+            if (shelfLocation && shelfLocation !== 'Auto-completed') {
+                const [shelfRow, shelfCol] = shelfLocation.split(',').map(Number);
+                addPathActivity(heatmap, shelfRow, shelfCol, packing.row, packing.col, frequencyWeight / 15);
+            }
+        }
+    });
+    
+    // Convert to heatmap format
+    const heatmapData = [];
+    for (let row = 0; row < heatmap.length; row++) {
+        for (let col = 0; col < heatmap[row].length; col++) {
+            if (heatmap[row][col] > 0) {
+                heatmapData.push({
+                    x: col,
+                    y: row,
+                    value: heatmap[row][col],
+                    type: getCellType(row, col, layout)
+                });
+            }
+        }
+    }
+    
+    return {
+        data: heatmapData,
+        maxValue: Math.max(...heatmap.flat()),
+        gridSize: heatmap.length,
         layout: layout
     };
 }

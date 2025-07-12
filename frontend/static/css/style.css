@@ -3150,3 +3150,110 @@ canvas {
         align-items: flex-start;
     }
 } 
+
+/* Order frequency styles */
+.order-frequency {
+    font-size: 0.8em;
+    color: #ff6b35;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.order-frequency i {
+    margin-right: 2px;
+}
+
+/* Historical frequency marker */
+.historical-marker {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background-color: #ff6b35;
+    border-radius: 1px;
+    z-index: 2;
+}
+
+.historical-freq {
+    color: #666;
+    font-size: 0.8em;
+    margin-left: 5px;
+}
+
+/* Frequency insights */
+.frequency-insights {
+    margin-top: 20px;
+    padding: 15px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
+    border-left: 4px solid #ff6b35;
+}
+
+.frequency-insights h5 {
+    color: #495057;
+    margin-bottom: 15px;
+    font-size: 1rem;
+}
+
+.insight-item {
+    margin-bottom: 8px;
+    padding: 8px;
+    background: white;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.variance.good {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.variance.warning {
+    color: #ffc107;
+    font-weight: bold;
+}
+
+/* Category bar positioning for historical markers */
+.category-bar {
+    position: relative;
+    height: 8px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    overflow: visible;
+}
+
+.category-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* Dark theme adjustments for frequency data */
+[data-theme="dark"] .frequency-insights {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    border-left-color: #ff6b35;
+}
+
+[data-theme="dark"] .frequency-insights h5 {
+    color: #f3f4f6;
+}
+
+[data-theme="dark"] .insight-item {
+    background: #374151;
+    color: #f3f4f6;
+}
+
+[data-theme="dark"] .historical-freq {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .order-frequency {
+    color: #ff6b35;
+}
+
+.layout-header {
+    padding: 1rem;
+}
