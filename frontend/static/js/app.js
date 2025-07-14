@@ -361,12 +361,14 @@ class WarehouseApp {
         // Hide all sections
         document.querySelectorAll('.content-section').forEach(section => {
             section.classList.remove('active');
+            section.style.display = 'none';
         });
         
         // Show selected section
         const targetSection = document.getElementById(sectionName);
         if (targetSection) {
             targetSection.classList.add('active');
+            targetSection.style.display = 'block';
         }
         
         // Update navigation dropdown

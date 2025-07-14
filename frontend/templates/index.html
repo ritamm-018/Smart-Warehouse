@@ -797,8 +797,8 @@
                             <button class="btn btn-success" onclick="applyOptimizedLayout()">
                                 <i class="fas fa-check me-1"></i>Apply Optimized Layout
                             </button>
-                            <button class="btn btn-primary" onclick="exportOptimizationReport()">
-                                <i class="fas fa-download me-1"></i>Export Report
+                            <button class="btn btn-primary" onclick="showBusinessImpact()">
+                                <i class="fas fa-briefcase me-1"></i>Business Impact
                             </button>
                             <button class="btn btn-secondary" onclick="goBackToReadings()">
                                 <i class="fas fa-arrow-left me-1"></i>Back to Readings
@@ -962,6 +962,27 @@
                     </div>
                 </div>
 
+                <!-- Business Impact Section -->
+                <div id="business-impact-section" class="content-section" style="display:none;">
+                    <div class="section-header">
+                        <h2><i class="fas fa-briefcase me-2"></i>Business Impact</h2>
+                        <div class="header-actions">
+                            <button class="btn btn-secondary" onclick="goBackToCompareLayouts()">
+                                <i class="fas fa-arrow-left me-1"></i>Back to Compare Layouts
+                            </button>
+                        </div>
+                    </div>
+                    <div id="business-impact-content-page" class="mb-4"></div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <canvas id="costComparisonChart"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <canvas id="performanceComparisonChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Notifications -->
         <div id="notifications" class="notifications-container"></div>
 
@@ -1038,5 +1059,25 @@
     <script src="/static/js/layout-editor.js"></script>
     <script src="/static/js/simulation.js"></script>
     <script src="/static/js/rl-optimization.js"></script>
+
+    <!-- Business Impact Modal -->
+    <div class="modal fade business-impact-modal" id="businessImpactModal" tabindex="-1" aria-labelledby="businessImpactLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="businessImpactLabel"><i class="fas fa-briefcase me-2"></i>Business Impact & Cost Summary</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-4">
+            <div id="business-impact-content">
+              <!-- Cost summary will be injected here by JS -->
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
 </body>
 </html> 
