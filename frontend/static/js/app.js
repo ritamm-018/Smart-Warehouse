@@ -717,6 +717,23 @@ function viewOrderDetails(orderId) {
 }
 
 // Initialize app when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    const overlay = document.getElementById('welcome-overlay');
+    if (overlay) {
+        overlay.style.opacity = '0';
+        overlay.style.display = 'flex';
+        setTimeout(() => {
+            overlay.style.opacity = '1';
+        }, 100); // Start fade in
+        setTimeout(() => {
+            overlay.style.opacity = '0';
+            overlay.style.pointerEvents = 'none';
+        }, 2600); // Fade out after 2.5s
+        setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 3500); // Remove overlay after fade out
+    }
+});
 document.addEventListener('DOMContentLoaded', () => {
     window.warehouseApp = new WarehouseApp();
 }); 
